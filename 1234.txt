@@ -1,0 +1,22 @@
+4
+"" I am a girl. 1 
+I am a girl. I 1 
+I am not a boy. 1 
+"" "" I am a 1 
+am a girl. I am 1 
+am not a boy. A 1 
+not a boy. A boy 1 
+boy. A boy may love 1 
+A boy may love a 1 
+boy may love a girl. 1 
+A girl may love a 1 
+"" "" "" I am 1 
+girl. I am not a 1 
+may love a girl. A 1 
+a girl. A girl may 1 
+girl. A girl may love 1 
+"" "" "" "" I 1 
+a girl. I am not 1 
+a boy. A boy may 1 
+love a girl. A girl 1 
+girl may love a boy. 1 
