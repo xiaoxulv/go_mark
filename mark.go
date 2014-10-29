@@ -100,7 +100,7 @@ func NewChain(prefixLen int) *Chain {
 // parses it into prefixes and suffixes that are stored in Chain.
 func (c *Chain) Build(inputFile []string) {
 	n := len(inputFile)//number of input files
-	p := make(Prefix, c.prefixLen)//prefix words slice
+	//p := make(Prefix, c.prefixLen)//prefix words slice
 
 	var s [][]string = make([][]string, n)
 	for i := range s{
@@ -120,17 +120,12 @@ func (c *Chain) Build(inputFile []string) {
 
 		for scanner.Scan(){
 			s[i] = append(s[i], scanner.Text())//each file gets a slice of words
-
-		}
-
-		if scanner.Err() != nil {
-        	fmt.Println("Sorry: there was some kind of error during the inputFile reading")
-			os.Exit(3) 
 		}
 	}
-
 	for i, _ := range s{
+		p := make(Prefix, c.prefixLen)
 		for j, get := range s[i]{//get word form slice
+
 			key := p.String()
 			/*
 			* maps of structs: can’t change the value of a field in a 
