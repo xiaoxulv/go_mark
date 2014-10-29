@@ -47,9 +47,7 @@ package main
 
 import (
 	"bufio"
-	//"flag"
 	"fmt"
-	//"io"
 	"math/rand"
 	"os"
 	"strings"
@@ -61,7 +59,7 @@ import (
 type Prefix []string
 
 /*
- * Suffix is 
+ * Suffix is a struct that maintains every prefix's suffix word and its frequency
  */
 type Suffix struct{
 	word string
@@ -77,32 +75,28 @@ func (p Prefix) String() string {
 func (p Prefix) Shift(word string) {
 	copy(p, p[1:])
 	p[len(p)-1] = word
-	//fmt.Println("after shifting: ", p[len(p)-1])
 }
 
-// Chain contains a map ("chain") of prefixes to a list of suffixes.
-// A prefix is a string of prefixLen words joined with spaces.
-// A suffix is a single word. A prefix can have multiple suffixes.
+/* Chain contains a map ("chain") of prefixes to a list of suffixes.
+ * A prefix is a string of prefixLen words joined with spaces.
+ * A suffix is a slice of struct Suffix. A prefix can have multiple suffixes.
+ */
 type Chain struct {
-	//chain     map[string][]string
 	chain map[string][]Suffix
 	prefixLen int
 }
 
 // NewChain returns a new Chain with prefixes of prefixLen words.
 func NewChain(prefixLen int) *Chain {
-	//return &Chain{make(map[string][]string), prefixLen}
-	/*			*/
 	return &Chain{make(map[string][]Suffix), prefixLen}
 }
-
-// Build reads text from the provided Reader and
-// parses it into prefixes and suffixes that are stored in Chain.
+/*
+ * Build reads text from the provided slice of inputfile
+ * parses it into prefixes and suffixes that are stored in Chain.
+ */
 func (c *Chain) Build(inputFile []string) {
 	n := len(inputFile)//number of input files
-	//p := make(Prefix, c.prefixLen)//prefix words slice
-
-	var s [][]string = make([][]string, n)
+	var s [][]string = make([][]string, n)//nest slices to store content of input
 	for i := range s{
 		s[i] = make([]string, 0)
 	}
@@ -124,7 +118,7 @@ func (c *Chain) Build(inputFile []string) {
 	}
 	for i, _ := range s{
 		p := make(Prefix, c.prefixLen)
-		for j, get := range s[i]{//get word form slice
+		for j, get := range s[i]{//get word from slice
 
 			key := p.String()
 			/*
@@ -152,9 +146,9 @@ func (c *Chain) Build(inputFile []string) {
 	}
 }
 /*
- *
- *
- *
+ * WirteFreTable writes chain in to output file.
+ * The format should be prefix Suffix{word frequency}.
+ * First line inpliews the prefixLen.
  */
 func (c *Chain) WriteFreTable(outFileName string){
 	outFile, err := os.Create(outFileName)
@@ -163,40 +157,33 @@ func (c *Chain) WriteFreTable(outFileName string){
 	}
 	defer outFile.Close()
 
-	fmt.Fprintln(outFile, c.prefixLen)
+	fmt.Fprintln(outFile, c.prefixLen)//first line is prefixLen
 
-	for i, suffix := range c.chain{
-		//fmt.Println(i)
-		ss := strings.Split(i, " ")
-		//fmt.Println(ss)
+	for i, suffix := range c.chain{//for each prefix
+		ss := strings.Split(i, " ")//Be careful: this nou work with string with spcace
 		flag := false
 		count := 0
 		for j := 0; j < len(ss); j++{
-			//fmt.Println("j = ", j)
-			if len(ss[j]) == 0{
+			if len(ss[j]) == 0{ //white space goes with ""
 				count++
-				//fmt.Println("0: ",ss[j])
 				fmt.Fprint(outFile, "\"\"", " ")
-				//fmt.Print("\"\"", " ")
+
 			}else if flag != true{
-				//fmt.Println(ss[j])
 				i = i[count:]
 				fmt.Fprint(outFile, i, " ")
-				//fmt.Println(i, " ")
 				flag = true
 			}
 		}
-		for _, val := range suffix{
+		for _, val := range suffix{//for each suffix
 			fmt.Fprint(outFile, val.word, " ", val.frequency, " ")
 		}
 		fmt.Fprintln(outFile)
-		//fmt.Println()
 	}
 }	
 /*
- *
- *
- *
+ * ReadFreTable reads the given model file and initilize a chain.
+ * The first line of model file gives prefixLen.
+ * The rest, Each line of model file in format prefix Suffix{word frequency}
  */
 func ReadFreTable(modelFile string) *Chain {
 	in, err := os.Open(modelFile)
@@ -209,9 +196,9 @@ func ReadFreTable(modelFile string) *Chain {
 
 	var prefixLen int = 0
 	if(scanner.Scan()){
-		prefixLen, _ = strconv.Atoi(scanner.Text())
+		prefixLen, _ = strconv.Atoi(scanner.Text())//get prefixLen
 	}
-	c := NewChain(prefixLen)
+	c := NewChain(prefixLen)//a new chain
 
 	for scanner.Scan(){
 		var line string
@@ -219,70 +206,47 @@ func ReadFreTable(modelFile string) *Chain {
 		var key string
 		line = scanner.Text()//get a whole line each time we scan
 		words = strings.Split(line, " ")//split the line by white space
-		//fmt.Println(words)
 		for i := 0 ; i < prefixLen; i++{//get key of the map, which is prefix 
 			key += words[i]
 			key += " "
 		}
-
-		key = key[0:len(key)-1]
-		//fmt.Println(key)
-		//fmt.Println(len(words))
-
+		key = key[0:len(key)-1]//the last space should be eliminated as a key(prefix) of map
 		for i := prefixLen; i < len(words)-1; i += 2{//get all suffix of current prefix
-			//fmt.Println("loop for suffix")
 			var newSuf Suffix
 			newSuf.word = words[i]
-			//fmt.Println(words[i])
 			newSuf.frequency, _ = strconv.Atoi(words[i+1])
-			//fmt.Println(newSuf.frequency)
 			c.chain[key] = append(c.chain[key], newSuf)
-			
 		}
-		//fmt.Println()
 	}
-	if scanner.Err() != nil {
-        fmt.Println("Sorry: there was some kind of error during the modileFile reading")
-		os.Exit(3) 
-	}
-
 	return c
 }
 
 
 //Generate returns a string of at most n words generated from Chain.
 func (c *Chain) Generate(n int) string {
-	//fmt.Println("generating")
 	p := make(Prefix, c.prefixLen)
-
 	for i := 0; i < c.prefixLen; i++{
 		p[i] = "\"\""
 	}
-	
 	var words []string
 	for i := 0; i < n; i++ {
-		//fmt.Println("here in the loop")
 		temp := p.String()
-		//fmt.Println(temp)
 		choices := c.chain[temp]//get slices of suffix
-		//fmt.Println(choices)
-		if len(choices) == 0 {
+		if len(choices) == 0 {//nothing could be generated as no key in map
 			break
 		}
 		var sum []int = make([]int, 1000)
 		var count int = 0
-		//fmt.Println("len is ", len(choices))
-		for j,val := range choices{
-			
+		//for prorportion calculation
+		for j,val := range
+		 choices{
 			if j == 0{
 				sum[j] = val.frequency
 			}else{
 				sum[j] = sum[j-1] + val.frequency
-				//fmt.Println("here")
 			}
-			//fmt.Println(j)
 		}
-		//fmt.Println(sum[len(choices)-1])
+		//random num to choose, by proportion/possibility
 		random := rand.Intn(sum[len(choices)-1])
 		for i := 0; i < len(choices); i++{
 			if random >= sum[i]{
@@ -290,33 +254,26 @@ func (c *Chain) Generate(n int) string {
 			}
 		}
 		next := choices[count].word
-		//fmt.Println(next)
 		words = append(words, next)
+		
 		p.Shift(next)
 	}
 	return strings.Join(words, " ")
 }
 
 func main() {
-	// Register command-line flags.
-	//	numWords := flag.Int("words", 100, "maximum number of words to print")
-	// prefixLen := flag.Int("prefix", 2, "prefix length in words")
-
-	// flag.Parse()                     // Parse command-line flags.
 
 	rand.Seed(time.Now().UnixNano()) // Seed the random number generator.
 	
 	cmd := os.Args[1]
 	if cmd == "read"{
 		outputFile := os.Args[3]
-		//outputFile += ".txt"
 		num, err := strconv.Atoi(os.Args[2])
 		if err != nil || num <= 0 {
 			fmt.Println("Sorry: number of prefix should be positive.")
 		return
 		}
-		
-		var inputFile []string
+		var inputFile []string//inputfile into a slice
 		for i := 4; i < len(os.Args); i++{
 			inputFile = append(inputFile, os.Args[i])
 		}
@@ -328,7 +285,6 @@ func main() {
 	}else if cmd == "generate" {
 		if len(os.Args) == 4{
 			model := os.Args[2]
-			//model += ".txt"
 			n, err := strconv.Atoi(os.Args[3])
 			if err != nil || n <= 0 {
 				fmt.Println("Sorry: number of words should be positive.")
@@ -336,7 +292,6 @@ func main() {
 			}
 			c := ReadFreTable(model)//read from model file to initialize a chain
 			text := c.Generate(n)//use the chain to generate n words
-			//fmt.Println("oh~~~~~~~")
 			fmt.Println(text)
 
 		}else{
@@ -345,8 +300,4 @@ func main() {
 	}else{
 		fmt.Println("Sorry: choose read or generate for command option for 1st parameter.")
 	}
-
-
-	//text := c.Generate(*numWords) // Generate text.
-	//fmt.Println(text)             // Write text to standard output.
 }
